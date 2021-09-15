@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Algorand Payroll Smart Contract</string>
+    <string name="contract_account_balance">Contract Account Bal</string>
+</resources>
