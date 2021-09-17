@@ -17,9 +17,10 @@ import com.algorand.algosdk.v2.client.common.AlgodClient
 import kotlinx.coroutines.*
 import timber.log.Timber
 
-class DetailActivity : AppCompatActivity() , CoroutineScope by MainScope() {
-        private var employees = ArrayList<Employee>()
-//    private lateinit var employees: ArrayList<Employee>
+class DetailActivity : AppCompatActivity(), CoroutineScope by MainScope() {
+    private var employees = ArrayList<Employee>()
+
+    //    private lateinit var employees: ArrayList<Employee>
     lateinit var binding: ActivityDetailBinding
     private var client: AlgodClient = AlgodClient(
         Constants.ALGOD_API_ADDR,
@@ -53,17 +54,21 @@ class DetailActivity : AppCompatActivity() , CoroutineScope by MainScope() {
     }
 
     private fun getAccountBalance(address: Address?) = launch {
-        runOnUiThread { binding.progress.visibility = View.VISIBLE  }
-        withContext(Dispatchers.Default){
-            val accountInfo: com.algorand.algosdk.v2.client.model.Account =
-                client.AccountInformation(address).execute(headers, values).body()
-            val amount = (accountInfo.amount)
-            Timber.d("Account Balance: ${amount.toBigDecimal()}")
-            runOnUiThread {
-                binding.progress.visibility = View.GONE
-                binding.salary.text = accountInfo.amount.toString()
-
+        runOnUiThread { binding.progress.visibility = View.VISIBLE }
+        withContext(Dispatchers.Default) {
+            try {
+                val accountInfo: com.algorand.algosdk.v2.client.model.Account =
+                    client.AccountInformation(address).execute(headers, values).body()
+                val amount = (accountInfo.amount)
+                Timber.d("Account Balance: ${amount.toBigDecimal()}")
+                runOnUiThread {
+                    binding.progress.visibility = View.GONE
+                    binding.salary.text = accountInfo.amount.toString()
+                }
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
             }
+
         }
     }
 

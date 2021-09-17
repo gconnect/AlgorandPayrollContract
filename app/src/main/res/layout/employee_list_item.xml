@@ -79,13 +79,6 @@
                 android:textStyle="bold"
                 android:textSize="24sp"
                 />
-            <CheckBox
-                android:id="@+id/checkItem"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/role"
-                app:layout_constraintRight_toRightOf="parent"
-                />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

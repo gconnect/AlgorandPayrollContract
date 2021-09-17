@@ -17,11 +17,8 @@ class EmployeeAdapter internal constructor(
 
     private val inflater: LayoutInflater = LayoutInflater.from(context)
     private var employees = emptyList<Employee>()
-    var checkedValue: Boolean = false
 
-    var onCustomClickItemListner = fun(view: View, position: Int): Unit = Unit
     var onItemClick: ((Int) -> Unit)? = null
-    var onItemChecked: ((Boolean, Int) -> Unit)? = null
 
 
     inner class EmployeeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
@@ -29,7 +26,6 @@ class EmployeeAdapter internal constructor(
         val profileImage: ImageView = itemView.findViewById(R.id.profile_image)
         val role: TextView = itemView.findViewById(R.id.role)
         val salary: TextView = itemView.findViewById(R.id.salary)
-        val isSelected: CheckBox = itemView.findViewById(R.id.checkItem)
 
     }
 
@@ -45,29 +41,12 @@ class EmployeeAdapter internal constructor(
             .load(current.profilePics).into(holder.profileImage)
         holder.role.text = current.role
         holder.salary.text = current.salary.toString()
-//        holder.isSelected.text = current.isSelected
-//        holder.isSelected.setChecked(teacher.isSelected());
-//        holder.profileImage.setImageResource(current.profilePics)
-//        holder.isSelected.setOnClickListener(this)
 
 
         holder.itemView.setOnClickListener {
             onItemClick?.invoke(position)
         }
 
-        holder.isSelected.setOnCheckedChangeListener { buttonView, isChecked ->
-//            print(buttonView)
-//            Timber.d(buttonView.toString())
-            if (isChecked){
-                checkedValue = true
-                onItemChecked?.invoke(checkedValue,position)
-                Timber.d(checkedValue.toString())
-            }else{
-                checkedValue = false
-                onItemChecked?.invoke(checkedValue, position)
-            }
-//            buttonView.isChecked
-        }
     }
 
     internal fun setData(employees: List<Employee>) {
@@ -76,7 +55,5 @@ class EmployeeAdapter internal constructor(
     }
 
     override fun getItemCount() = employees.size
-
-
 
 }
