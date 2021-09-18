@@ -120,7 +120,7 @@
                 android:layout_margin="24dp"
                 android:padding="16dp"
                 android:backgroundTint="@color/purple_500"
-                android:text="Pay Employee(s)"
+                android:text="Pay Employees"
                 app:layout_constraintLeft_toRightOf="@id/explore"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/recyclerview" />
