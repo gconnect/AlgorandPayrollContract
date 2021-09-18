@@ -1,4 +1,4 @@
-# Algorand Payroll Smart Contract
+# Algorand Android Payroll Smart Contract using the Java SDK
 
 This solution will guide you in developing and deploying android application using the 
 Algorand blockchain atomic transfer and smart contract that addresses the following use case:
@@ -35,9 +35,9 @@ Algorand blockchain atomic transfer and smart contract that addresses the follow
 # Setup Development Environment
 To get started, your android studio should be up and running. To get the code on your android studio, simply click the clone button to clone the project or download the the project. Then from Android studio click on file and  select import to import the project from your local machine.
 
-# Installation Guide
+# App Installation Guide
 
-  To install the app, here is the link to the apk
+  To install the app, here is the link to the [apk](https://github.com/gconnect/AlgorandPayrollContract/blob/master/app/app-debug.apk)
   
 # File Structure
 - `Adapter` handles the recyclerview for the list of employees
