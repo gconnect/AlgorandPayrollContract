@@ -13,6 +13,7 @@ Algorand blockchain atomic transfer and smart contract that addresses the follow
 
 # Demo
 
+![payroll](https://user-images.githubusercontent.com/23031920/133864955-df2e4102-7e4f-4095-9a12-063b7f0cf252.png)
 
 # Requirements
 
@@ -38,6 +39,11 @@ To get started, your android studio should be up and running. To get the code on
 
   To install the app, here is the link to the apk
   
+# File Structure
+- `Adapter` handles the recyclerview for the list of employees
+- `constants` handles constant variables used in the MainActivity and DetailActivity
+- `MainActivity` handles the main logic of the application
+- `DetailActivity` handles the detail page for each employees
   
 # How the app works
   After installation..
@@ -49,7 +55,7 @@ To get started, your android studio should be up and running. To get the code on
   - The `pay employees` button calls the atomic transfer method to send algo to the employees either using the smart contract logic sig option or the sender option
    
 # License
-  Distributed under the MIT License. See  for more information.
+  Distributed under the MIT License. See  for more information. [LICENSE](https://github.com/gconnect/AlgorandPayrollContract/blob/master/LICENSE)
   
 # Blog and Video Tutorial
 For more details you can checkout the blog post [here] .
