@@ -40,10 +40,12 @@ To get started, your android studio should be up and running. To get the code on
   To install the app, here is the link to the [apk](https://github.com/gconnect/AlgorandPayrollContract/blob/master/app/app-debug.apk)
   
 # File Structure
-- `Adapter` handles the recyclerview for the list of employees
+- `EmployeeAdapter` handles the recyclerview for the list of employees
 - `constants` handles constant variables used in the MainActivity and DetailActivity
 - `MainActivity` handles the main logic of the application
 - `DetailActivity` handles the detail page for each employees
+- `Employee` handles the data model
+- `EmployeeDataSource` handles dummy data/list of empployees
   
 # How the app works
   After installation..
@@ -58,7 +60,7 @@ To get started, your android studio should be up and running. To get the code on
   Distributed under the MIT License. See  for more information. [LICENSE](https://github.com/gconnect/AlgorandPayrollContract/blob/master/LICENSE)
   
 # Blog and Video Tutorial
-For more details you can checkout the blog post [here] .
+For more details you can checkout the blog post [here](https://developer.algorand.org/solutions/building-an-android-payroll-dapp-using-algorand-smart-contract/) .
 
 
 # Disclaimer
