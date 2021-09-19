@@ -6,5 +6,4 @@ data class Employee(
     val salary : Int,
     val profilePics : Int,
     val accountAddress : String,
-    val isSelected : Boolean = false,
     )

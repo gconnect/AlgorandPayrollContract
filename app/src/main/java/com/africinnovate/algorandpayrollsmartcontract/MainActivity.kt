@@ -198,7 +198,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun atomicTransfer() = launch {
         runOnUiThread {
-            binding.progress1.visibility = View.VISIBLE
+            binding.progress.visibility = View.VISIBLE
         }
         withContext(Dispatchers.Default) {
             val employer_mnemonic = ACCOUNT_MNEMONIC
@@ -268,7 +268,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 ).body().txId
                 println("Successfully sent tx with ID: $id")
                 runOnUiThread {
-                    binding.progress1.visibility = View.GONE
+                    binding.progress.visibility = View.GONE
                     binding.result.text = "Successfully sent tx with ID: $id"
                 }
                 // wait for confirmation
@@ -284,7 +284,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun atomicTransferWithSmartContract() = launch {
         runOnUiThread {
-            binding.progress1.visibility = View.VISIBLE
+            binding.progress.visibility = View.VISIBLE
         }
         withContext(Dispatchers.Default) {
 
@@ -321,16 +321,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             val lsig = LogicsigSignature(program, teal_args)
             Timber.d("lsig add ${lsig.toAddress()}")
 
-            val employer_mnemonic = ACCOUNT_MNEMONIC
             val employee1_mnemonic = ACCOUNT1_MNEMONIC
             val employee2_mnemonic = ACCOUNT2_MNEMONIC
             val employee3_mnemonic = ACCOUNT3_MNEMONIC
 
             // recover account A, B, C
-            val acctA = Account(employer_mnemonic)
-            val acctB = Account(employee1_mnemonic)
-            val acctC = Account(employee2_mnemonic)
-            val acctD = Account(employee3_mnemonic)
+            val acctA = Account(employee1_mnemonic)
+            val acctB = Account(employee2_mnemonic)
+            val acctC = Account(employee3_mnemonic)
 
             // get node suggested parameters
             val params = client.TransactionParams().execute(headers, values).body()
@@ -338,7 +336,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             val tx1: Transaction = Transaction.PaymentTransactionBuilder()
                 .sender(lsig.toAddress())
                 .amount(2000000)
-                .receiver(acctB.address)
+                .receiver(acctA.address)
                 .suggestedParams(params)
                 .build()
 
@@ -346,7 +344,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             val tx2: Transaction = Transaction.PaymentTransactionBuilder()
                 .sender(lsig.toAddress())
                 .amount(1000000)
-                .receiver(acctC.address)
+                .receiver(acctB.address)
                 .suggestedParams(params)
                 .build()
 
@@ -354,7 +352,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             val tx3: Transaction = Transaction.PaymentTransactionBuilder()
                 .sender(lsig.toAddress())
                 .amount(2000000)
-                .receiver(acctD.address)
+                .receiver(acctC.address)
                 .suggestedParams(params)
                 .build()
 
@@ -388,7 +386,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 ).body().txId
                 println("Successfully sent tx with ID: $id")
                 runOnUiThread {
-                    binding.progress1.visibility = View.GONE
+                    binding.progress.visibility = View.GONE
                     binding.result.text = "Successfully sent tx with ID: $id"
                 }
                 // wait for confirmation
