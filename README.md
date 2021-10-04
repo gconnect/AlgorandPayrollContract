@@ -7,6 +7,8 @@ Algorand blockchain atomic transfer and smart contract that addresses the follow
 
 * Funding accounts
 
+* Compile Teal
+
 * Atomic transfer signed by the sender
 
 * Atomic transfer signed by a smart contract
