@@ -7,15 +7,15 @@ Algorand blockchain atomic transfer and smart contract that addresses the follow
 
 * Funding accounts
 
-* Compile Teal
+* [Create and compile the teal program](create_and_compile_the_teal_program)
 
 * Atomic transfer signed by the sender
 
 * Atomic transfer signed by a smart contract
 
 # Demo
+![BACKIMAGE](https://user-images.githubusercontent.com/23031920/136575585-d728260a-2566-4bca-875d-81f03331e709.png)
 
-![payroll](https://user-images.githubusercontent.com/23031920/133864955-df2e4102-7e4f-4095-9a12-063b7f0cf252.png)
 
 # Requirements
 
@@ -48,7 +48,45 @@ To get started, your android studio should be up and running. To get the code on
 - `DetailActivity` handles the detail page for each employees
 - `Employee` handles the data model
 - `EmployeeDataSource` handles dummy data/list of empployees
-  
+
+# Teal Program/ Smart Contract
+```
+ val tealSource = """
+                int 1
+                
+                // Check the Fee is resonable, In this case 10,000 microalgos
+                txn Fee
+                int 10000
+                <=
+                &&
+                
+                //Check that the first group transaction is equal to 2000000
+                gtxn 0 Amount
+                int 2000000
+                == 
+                && 
+
+                //Check that the second group transaction is equal to 1000000
+                gtxn 1 Amount
+                int 1000000
+                == // same here, need to add an evaluation
+                &&
+
+                //Check that the third group transaction is equal to 2000000
+                gtxn 2 Amount
+                int 2000000
+                ==
+                &&
+                
+                
+                //Check that the transaction amount is less than 5000000 or equal to 5000000
+                txn Amount
+                int 5000000
+                <=
+                &&
+              
+            """.trimIndent()
+  ```
 # How the app works
   After installation..
   
