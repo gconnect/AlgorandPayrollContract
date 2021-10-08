@@ -43,6 +43,7 @@ import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.security.Security
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.Array as Array1
 
 
@@ -54,13 +55,15 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     val txValues: Array1<String> = ArrayUtils.add(values, "application/x-binary")
     lateinit var employeeAdapter: EmployeeAdapter
     lateinit var binding: ActivityMainBinding
-
     private var client: AlgodClient = AlgodClient(
         ALGOD_API_ADDR,
         ALGOD_PORT,
         ALGOD_API_TOKEN,
         ALGOD_API_TOKEN_KEY
     )
+    val source = Constants.tealSource
+
+    lateinit var response: CompileResponse
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,7 +72,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         Security.removeProvider("BC")
         Security.insertProviderAt(BouncyCastleProvider(), 0)
 
-        val address = Address(Constants.ACCOUNT_ADDRESS)
+        val address = Address(Constants.LSIG_SENDER_ADDRESS)
         getAccountBalance(address)
 
         initializeRecyclerview()
@@ -99,8 +102,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         Timber.d("address1 ${account.address} ")
 
         binding.paybtn.setOnClickListener {
-//            atomicTransferWithSmartContract()
-            atomicTransfer()
+            atomicTransferWithSmartContract()
+//            atomicTransfer()
+        }
+
+        binding.compile.setOnClickListener {
+            compileTeal()
         }
         binding.root
 
@@ -279,24 +286,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-
-    // Atomic Transfer Signed with a smart Contract Logic Sig
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun atomicTransferWithSmartContract() = launch {
+   private fun compileTeal() = launch {
         runOnUiThread {
             binding.progress.visibility = View.VISIBLE
         }
         withContext(Dispatchers.Default) {
 
-            val source = """
-            arg_0
-            btoi
-            int 123
-            ==
-        """.trimIndent()
-
             // compile
-            val response =
+           response =
                 client.TealCompile().source(source.toByteArray(charset("UTF-8"))).execute(
                     headers,
                     values
@@ -305,70 +302,76 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             println("response: $response")
             println("Hash: " + response.hash)
             println("Result: " + response.result)
-            val program = Base64.getDecoder().decode(response.result.toString())
+            runOnUiThread {
+                binding.progress.visibility = View.GONE
+                binding.result.text =
+                    " Response:\n Hash: ${response.hash}\n Result:  ${response.result}"
+            }
+        }
 
-            // create logic sig
-            // string parameter
-//            val teal_args = ArrayList<ByteArray>()
-//             val orig = "Fee"
-//             teal_args.add(orig.toByteArray())
-            // LogicsigSignature lsig = new LogicsigSignature(program, teal_args);
+    }
 
-            // integer parameter
-            val teal_args = ArrayList<ByteArray>()
-            val arg1 = byteArrayOf(123)
-            teal_args.add(arg1)
-            val lsig = LogicsigSignature(program, teal_args)
-            Timber.d("lsig add ${lsig.toAddress()}")
-
-            val employee1_mnemonic = ACCOUNT1_MNEMONIC
-            val employee2_mnemonic = ACCOUNT2_MNEMONIC
-            val employee3_mnemonic = ACCOUNT3_MNEMONIC
-
-            // recover account A, B, C
-            val acctA = Account(employee1_mnemonic)
-            val acctB = Account(employee2_mnemonic)
-            val acctC = Account(employee3_mnemonic)
-
-            // get node suggested parameters
-            val params = client.TransactionParams().execute(headers, values).body()
-            // Create the first transaction
-            val tx1: Transaction = Transaction.PaymentTransactionBuilder()
-                .sender(lsig.toAddress())
-                .amount(2000000)
-                .receiver(acctA.address)
-                .suggestedParams(params)
-                .build()
-
-            // Create the second transaction
-            val tx2: Transaction = Transaction.PaymentTransactionBuilder()
-                .sender(lsig.toAddress())
-                .amount(1000000)
-                .receiver(acctB.address)
-                .suggestedParams(params)
-                .build()
-
-            // Create the third transaction
-            val tx3: Transaction = Transaction.PaymentTransactionBuilder()
-                .sender(lsig.toAddress())
-                .amount(2000000)
-                .receiver(acctC.address)
-                .suggestedParams(params)
-                .build()
-
-            // group transactions an assign ids
-            val gid: Digest = TxGroup.computeGroupID(*arrayOf(tx1, tx2, tx3))
-            tx1.assignGroupID(gid)
-            tx2.assignGroupID(gid)
-            tx3.assignGroupID(gid)
-
-
-            // create the LogicSigTransaction with contract account LogicSig
-            // sign individual transactions
-            val signedTx1: SignedTransaction = Account.signLogicsigTransaction(lsig, tx1)
-            val signedTx2: SignedTransaction = Account.signLogicsigTransaction(lsig, tx2)
-            val signedTx3: SignedTransaction = Account.signLogicsigTransaction(lsig, tx3)
+    // Atomic Transfer Signed with a smart Contract Logic Sig
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun atomicTransferWithSmartContract() = launch {
+        runOnUiThread {
+            binding.progress.visibility = View.VISIBLE
+        }
+        withContext(Dispatchers.Default) {
             try {
+                val program = Base64.getDecoder().decode(response.result.toString())
+
+                val lsig = LogicsigSignature(program, null)
+                Timber.d("lsig add ${lsig.toAddress()}")
+
+                val employee1_mnemonic = ACCOUNT1_MNEMONIC
+                val employee2_mnemonic = ACCOUNT2_MNEMONIC
+                val employee3_mnemonic = ACCOUNT3_MNEMONIC
+
+                // recover account A, B, C
+                val acctA = Account(employee1_mnemonic)
+                val acctB = Account(employee2_mnemonic)
+                val acctC = Account(employee3_mnemonic)
+
+                // get node suggested parameters
+                val params = client.TransactionParams().execute(headers, values).body()
+                // Create the first transaction
+                val tx1: Transaction = Transaction.PaymentTransactionBuilder()
+                    .sender(lsig.toAddress())
+                    .amount(2000000)
+                    .receiver(acctA.address)
+                    .suggestedParams(params)
+                    .build()
+
+                // Create the second transaction
+                val tx2: Transaction = Transaction.PaymentTransactionBuilder()
+                    .sender(lsig.toAddress())
+                    .amount(1000000)
+                    .receiver(acctB.address)
+                    .suggestedParams(params)
+                    .build()
+
+                // Create the third transaction
+                val tx3: Transaction = Transaction.PaymentTransactionBuilder()
+                    .sender(lsig.toAddress())
+                    .amount(2000000)
+                    .receiver(acctC.address)
+                    .suggestedParams(params)
+                    .build()
+
+                // group transactions an assign ids
+                val gid: Digest = TxGroup.computeGroupID(*arrayOf(tx1, tx2, tx3))
+                tx1.assignGroupID(gid)
+                tx2.assignGroupID(gid)
+                tx3.assignGroupID(gid)
+
+
+                // create the LogicSigTransaction with contract account LogicSig
+                // sign individual transactions
+                val signedTx1: SignedTransaction = Account.signLogicsigTransaction(lsig, tx1)
+                val signedTx2: SignedTransaction = Account.signLogicsigTransaction(lsig, tx2)
+                val signedTx3: SignedTransaction = Account.signLogicsigTransaction(lsig, tx3)
+
                 // put all transactions in a byte array
                 val byteOutputStream = ByteArrayOutputStream()
                 val encodedTxBytes1: ByteArray = Encoder.encodeToMsgPack(signedTx1)
@@ -391,10 +394,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 }
                 // wait for confirmation
                 waitForConfirmation(id)
-            } catch (e: java.lang.Exception) {
-                println("Submit Exception: $e")
+            }catch (e: java.lang.Exception){
+                runOnUiThread {
+                    binding.progress.visibility = View.GONE
+                    binding.result.text = "Something went wrong with the teal program.\n Or you need to compile the program first\n\n"
+                }
             }
         }
     }
-
 }

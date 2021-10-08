@@ -99,7 +99,18 @@
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 />
-
+            <Button
+                android:id="@+id/compile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="24dp"
+                android:backgroundTint="@color/grey"
+                android:padding="16dp"
+                android:text="Compile"
+                android:textColor="#000000"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/recyclerview" />
             <Button
                 android:id="@+id/explore"
                 android:layout_width="wrap_content"
@@ -111,7 +122,7 @@
                 android:textColor="#000000"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toLeftOf="@id/paybtn"
-                app:layout_constraintTop_toBottomOf="@id/recyclerview" />
+                app:layout_constraintTop_toBottomOf="@id/compile" />
 
             <Button
                 android:id="@+id/paybtn"
@@ -123,7 +134,7 @@
                 android:text="Pay Employees"
                 app:layout_constraintLeft_toRightOf="@id/explore"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/recyclerview" />
+                app:layout_constraintTop_toBottomOf="@id/compile" />
 
             <TextView
                 android:id="@+id/result"
