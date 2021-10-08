@@ -37,6 +37,8 @@ Algorand blockchain atomic transfer and smart contract that addresses the follow
 # Setup Development Environment
 To get started, your android studio should be up and running. To get the code on your android studio, simply click the clone button to clone the project or download the the project. Then from Android studio click on file and  select import to import the project from your local machine.
 
+To successfully run this program, you need to generate/create four different accouts one for the contract owner and the remaining three for the employees. You can  create accounts using [myalgo](https://wallet.myalgo.com/access).
+
 # App Installation Guide
 
   To install the app, here is the link to the [apk](https://github.com/gconnect/AlgorandPayrollContract/blob/master/app/app-debug.apk)
