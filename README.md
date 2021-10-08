@@ -7,7 +7,7 @@ Algorand blockchain atomic transfer and smart contract that addresses the follow
 
 * Funding accounts
 
-* [Create and compile the teal program](create_and_compile_the_teal_program)
+* [Create and compile the teal program](create-and-compile-the-teal-program)
 
 * Atomic transfer signed by the sender
 
@@ -49,7 +49,8 @@ To get started, your android studio should be up and running. To get the code on
 - `Employee` handles the data model
 - `EmployeeDataSource` handles dummy data/list of empployees
 
-# Teal Program/ Smart Contract
+## Create and Compile the Teal Program
+## Teal Program/Smart Contract
 ```
  val tealSource = """
                 int 1
