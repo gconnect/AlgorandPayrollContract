@@ -54,21 +54,25 @@ class DetailActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private fun getAccountBalance(address: Address?) = launch {
-        runOnUiThread { binding.progress.visibility = View.VISIBLE }
+        runOnUiThread {
+            binding.progress.visibility = View.VISIBLE
+        }
         withContext(Dispatchers.Default) {
             try {
-                val accountInfo: com.algorand.algosdk.v2.client.model.Account =
-                    client.AccountInformation(address).execute(headers, values).body()
-                val amount = (accountInfo.amount)
-                Timber.d("Account Balance: ${amount.toBigDecimal()}")
+                val respAcct = client.AccountInformation(address).execute(headers, values)
+                if(!respAcct.isSuccessful){
+                    throw java.lang.Exception(respAcct.message())
+                }
+                val accountInfo = respAcct.body()
+                println(String.format("Account Balance: %d microAlgos", accountInfo.amount))
                 runOnUiThread {
                     binding.progress.visibility = View.GONE
-                    binding.salary.text = accountInfo.amount.toString()
+                    val amount = accountInfo.amount.toBigDecimal()
+                    binding.salary.text = amount.toString()
                 }
-            } catch (e: java.lang.Exception) {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
-
         }
     }
 

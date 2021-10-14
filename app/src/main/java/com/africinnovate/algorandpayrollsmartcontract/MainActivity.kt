@@ -24,7 +24,6 @@ import com.africinnovate.algorandpayrollsmartcontract.Constants.ALGOD_API_TOKEN_
 import com.africinnovate.algorandpayrollsmartcontract.Constants.ALGOD_PORT
 import com.africinnovate.algorandpayrollsmartcontract.databinding.ActivityMainBinding
 import com.algorand.algosdk.account.Account
-import com.algorand.algosdk.algod.client.ApiException
 import com.algorand.algosdk.crypto.Address
 import com.algorand.algosdk.crypto.Digest
 import com.algorand.algosdk.crypto.LogicsigSignature
@@ -34,7 +33,8 @@ import com.algorand.algosdk.transaction.TxGroup
 import com.algorand.algosdk.util.Encoder
 import com.algorand.algosdk.v2.client.common.AlgodClient
 import com.algorand.algosdk.v2.client.common.Response
-import com.algorand.algosdk.v2.client.model.*
+import com.algorand.algosdk.v2.client.model.CompileResponse
+import com.algorand.algosdk.v2.client.model.PendingTransactionResponse
 import kotlinx.coroutines.*
 import org.apache.commons.lang3.ArrayUtils
 import org.bouncycastle.jce.provider.BouncyCastleProvider
@@ -43,7 +43,6 @@ import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.security.Security
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.Array as Array1
 
 
@@ -62,8 +61,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         ALGOD_API_TOKEN_KEY
     )
     val source = Constants.tealSource
-
-    lateinit var response: CompileResponse
+    lateinit var response: Response<CompileResponse>
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,9 +83,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
         binding.copy.setOnClickListener {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("label", Constants.ACCOUNT_ADDRESS)
+            val clip = ClipData.newPlainText("label", Constants.LSIG_SENDER_ADDRESS)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(this, Constants.ACCOUNT_ADDRESS, Toast.LENGTH_LONG).show()
+            Toast.makeText(this, Constants.LSIG_SENDER_ADDRESS, Toast.LENGTH_LONG).show()
         }
         binding.fund.setOnClickListener { fundAccount() }
         binding.explore.setOnClickListener { viewExlorer() }
@@ -119,8 +117,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
         withContext(Dispatchers.Default) {
             try {
-                val accountInfo = client.AccountInformation(address).execute(headers, values).body()
-                Timber.d("Account Balance: ${accountInfo.amount}")
+                val respAcct = client.AccountInformation(address).execute(headers, values)
+                if (!respAcct.isSuccessful) {
+                    throw java.lang.Exception(respAcct.message())
+                }
+                val accountInfo = respAcct.body()
+                println(String.format("Account Balance: %d microAlgos", accountInfo.amount))
                 runOnUiThread {
                     binding.progress1.visibility = View.GONE
                     val amount = accountInfo.amount.toBigDecimal()
@@ -129,10 +131,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
         }
     }
-
 
     private fun viewExlorer() {
         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(Constants.EXLORER))
@@ -162,7 +162,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-
     private fun initializeRecyclerview() {
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerview)
         employeeAdapter = EmployeeAdapter(this)
@@ -176,30 +175,53 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         return client
     }
 
-    private fun waitForConfirmation(txID: String) {
-        if (client == null) client = connectToNetwork()
-        var lastRound = client!!.GetStatus().execute(headers, values).body().lastRound
-        while (true) {
-            try {
-                //Check the pending tranactions
-                val pendingInfo: Response<PendingTransactionResponse> =
-                    client.PendingTransactionInformation(txID).execute(headers, values)
-                if (pendingInfo.body().confirmedRound != null && pendingInfo.body().confirmedRound > 0) {
-                    //Got the completed Transaction
-                    println("Transaction " + txID + " confirmed in round " + pendingInfo.body().confirmedRound)
-                    runOnUiThread {
-                        binding.result.text =
-                            "Transaction $txID  confirmed in round ${pendingInfo.body().confirmedRound}"
-                    }
-                    break
-                }
-                lastRound++
-                client.WaitForBlock(lastRound).execute(headers, values)
-            } catch (e: Exception) {
-                throw e
-            }
+    /**
+     * utility function to wait on a transaction to be confirmed
+     * the timeout parameter indicates how many rounds do you wish to check pending transactions for
+     */
+    private fun waitForConfirmation(
+        myclient: AlgodClient?,
+        txID: String?,
+        timeout: Int
+    ): PendingTransactionResponse? {
+        require(!(myclient == null || txID == null || timeout < 0)) { "Bad arguments for waitForConfirmation." }
+        var resp = myclient.GetStatus().execute(headers, values)
+        if (!resp.isSuccessful) {
+            throw java.lang.Exception(resp.message())
         }
+        val nodeStatusResponse = resp.body()
+        val startRound = nodeStatusResponse.lastRound + 1
+        var currentRound = startRound
+        while (currentRound < startRound + timeout) {
+            // Check the pending transactions
+            val resp2 = myclient.PendingTransactionInformation(txID).execute(headers, values)
+            if (resp2.isSuccessful) {
+                val pendingInfo = resp2.body()
+                if (pendingInfo != null) {
+                    if (pendingInfo.confirmedRound != null && pendingInfo.confirmedRound > 0) {
+                        // Got the completed Transaction
+                        println("Transaction " + txID + " confirmed in round " + pendingInfo.confirmedRound)
+                        runOnUiThread {
+                            binding.result.text =
+                                "Transaction $txID  confirmed in round ${pendingInfo.confirmedRound}"
+                        }
+                        return pendingInfo
+                    }
+                    if (pendingInfo.poolError != null && pendingInfo.poolError.length > 0) {
+                        // If there was a pool error, then the transaction has been rejected!
+                        throw java.lang.Exception("The transaction has been rejected with a pool error: " + pendingInfo.poolError)
+                    }
+                }
+            }
+            resp = myclient.WaitForBlock(currentRound).execute(headers, values)
+            if (!resp.isSuccessful) {
+                throw java.lang.Exception(resp.message())
+            }
+            currentRound++
+        }
+        throw java.lang.Exception("Transaction not confirmed after $timeout rounds!")
     }
+
 
     //Atomic Transfer signed by the Sender
     @RequiresApi(Build.VERSION_CODES.O)
@@ -219,8 +241,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             val acctC = Account(employee2_mnemonic)
             val acctD = Account(employee3_mnemonic)
 
-            // get node suggested parameters
-            val params = client.TransactionParams().execute(headers, values).body()
+            var resp = client.TransactionParams().execute(headers, values)
+            if (!resp.isSuccessful) {
+                throw java.lang.Exception(resp.message())
+            }
+            val params = resp.body() ?: throw  Exception("Params retrieval error")
             // Create the first transaction
             val tx1: Transaction = Transaction.PaymentTransactionBuilder()
                 .sender(acctA.address)
@@ -236,6 +261,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 .receiver(acctC.address)
                 .suggestedParams(params)
                 .build()
+
 
             // Create the third transaction
             val tx3: Transaction = Transaction.PaymentTransactionBuilder()
@@ -268,47 +294,75 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 byteOutputStream.write(encodedTxBytes3)
                 val groupTransactionBytes: ByteArray = byteOutputStream.toByteArray()
 
-                // send transaction group
-                val id = client.RawTransaction().rawtxn(groupTransactionBytes).execute(
+                // send transaction group to the network
+                val rawResponse = client.RawTransaction().rawtxn(groupTransactionBytes).execute(
                     txHeaders,
                     txValues
-                ).body().txId
+                )
+                if (!rawResponse.isSuccessful()) {
+                    throw  Exception(rawResponse.message());
+                }
+                val id = rawResponse.body().txId
+
                 println("Successfully sent tx with ID: $id")
                 runOnUiThread {
                     binding.progress.visibility = View.GONE
                     binding.result.text = "Successfully sent tx with ID: $id"
                 }
-                // wait for confirmation
-                waitForConfirmation(id)
+
+                // Wait for transaction confirmation
+                val pTrx = waitForConfirmation(client, id, 4)
+                System.out.println("Transaction " + id.toString() + " confirmed in round " + pTrx!!.confirmedRound)
+                // Read the transaction
+                val jsonObj2 = JSONObject(pTrx.toString())
+                println("Transaction information (with notes): " + jsonObj2.toString(2))
+                println("Decoded note: " + String(pTrx.txn.tx.note))
+                println("Transaction information (with notes): " + jsonObj2.toString(2))
+                println("Decoded note: " + String(pTrx.txn.tx.note))
+                println("Amount: " + pTrx.txn.tx.amount.toString())
+                println("Fee: " + pTrx.txn.tx.fee.toString())
+                if (pTrx.closingAmount != null) {
+                    println("Closing Amount: " + pTrx.closingAmount.toString())
+                }
             } catch (e: java.lang.Exception) {
                 println("Submit Exception: $e")
+                System.err.println("Exception when calling algod#transactionInformation: " + e.message);
+
             }
         }
     }
 
-   private fun compileTeal() = launch {
+    private fun compileTeal() = launch {
         runOnUiThread {
             binding.progress.visibility = View.VISIBLE
         }
         withContext(Dispatchers.Default) {
-
-            // compile
-           response =
-                client.TealCompile().source(source.toByteArray(charset("UTF-8"))).execute(
+            try {
+                response = client.TealCompile().source(source.toByteArray(charset("UTF-8"))).execute(
                     headers,
                     values
-                ).body()
-            // print results
-            println("response: $response")
-            println("Hash: " + response.hash)
-            println("Result: " + response.result)
-            runOnUiThread {
-                binding.progress.visibility = View.GONE
-                binding.result.text =
-                    " Response:\n Hash: ${response.hash}\n Result:  ${response.result}"
+                )
+                if (!response.isSuccessful) {
+                    throw java.lang.Exception(response.message().toString())
+                }
+                Timber.d("compileResponse: hash ${response.body().hash}")
+                Timber.d("compileResponse: result ${response.body().result}")
+                runOnUiThread {
+                    binding.progress.visibility = View.GONE
+                    binding.result.text =
+                        " Response:\n Hash: ${response.body().hash}\n Result:  ${response.body().result}"
+                }
+                            
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                runOnUiThread {
+                    binding.progress.visibility = View.GONE
+                    binding.result.text =
+                        "Error occured, check the TEAL program"
+                }
             }
-        }
 
+        }
     }
 
     // Atomic Transfer Signed with a smart Contract Logic Sig
@@ -319,7 +373,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
         withContext(Dispatchers.Default) {
             try {
-                val program = Base64.getDecoder().decode(response.result.toString())
+                val program = Base64.getDecoder().decode(response.body().result.toString())
 
                 val lsig = LogicsigSignature(program, null)
                 Timber.d("lsig add ${lsig.toAddress()}")
@@ -334,13 +388,18 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 val acctC = Account(employee3_mnemonic)
 
                 // get node suggested parameters
-                val params = client.TransactionParams().execute(headers, values).body()
+                var resp = client.TransactionParams().execute(headers, values)
+                if (!resp.isSuccessful) {
+                    throw java.lang.Exception(resp.message())
+                }
+                val params = resp.body() ?: throw  Exception("Params retrieval error")
                 // Create the first transaction
                 val tx1: Transaction = Transaction.PaymentTransactionBuilder()
                     .sender(lsig.toAddress())
                     .amount(2000000)
                     .receiver(acctA.address)
                     .suggestedParams(params)
+                    .note("employee1".toByteArray())
                     .build()
 
                 // Create the second transaction
@@ -349,6 +408,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                     .amount(1000000)
                     .receiver(acctB.address)
                     .suggestedParams(params)
+                    .note("employee2".toByteArray())
                     .build()
 
                 // Create the third transaction
@@ -357,6 +417,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                     .amount(2000000)
                     .receiver(acctC.address)
                     .suggestedParams(params)
+                    .note("employee3".toByteArray())
                     .build()
 
                 // group transactions an assign ids
@@ -382,23 +443,43 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 byteOutputStream.write(encodedTxBytes3)
                 val groupTransactionBytes: ByteArray = byteOutputStream.toByteArray()
 
-                // send transaction group
-                val id = client.RawTransaction().rawtxn(groupTransactionBytes).execute(
+                // Submit transaction group to the network
+                val rawResponse = client.RawTransaction().rawtxn(groupTransactionBytes).execute(
                     txHeaders,
                     txValues
-                ).body().txId
+                )
+                if (!rawResponse.isSuccessful()) {
+                    throw  Exception(rawResponse.message());
+                }
+                val id = rawResponse.body().txId
+
                 println("Successfully sent tx with ID: $id")
                 runOnUiThread {
                     binding.progress.visibility = View.GONE
                     binding.result.text = "Successfully sent tx with ID: $id"
                 }
-                // wait for confirmation
-                waitForConfirmation(id)
-            }catch (e: java.lang.Exception){
-                runOnUiThread {
-                    binding.progress.visibility = View.GONE
-                    binding.result.text = "Something went wrong with the teal program.\n Or you need to compile the program first\n\n"
+
+                // Wait for transaction confirmation
+                val pTrx = waitForConfirmation(client, id, 4)
+                System.out.println("Transaction " + id.toString() + " confirmed in round " + pTrx!!.confirmedRound)
+                // Read the transaction
+                val jsonObj2 = JSONObject(pTrx.toString())
+                println("Transaction information (with notes): " + jsonObj2.toString(2))
+                println("Decoded note: " + String(pTrx.txn.tx.note))
+                println("Transaction information (with notes): " + jsonObj2.toString(2))
+                println("Decoded note: " + String(pTrx.txn.tx.note))
+                println("Amount: " + pTrx.txn.tx.amount.toString())
+                println("Fee: " + pTrx.txn.tx.fee.toString())
+                if (pTrx.closingAmount != null) {
+                    println("Closing Amount: " + pTrx.closingAmount.toString())
                 }
+            } catch (e: java.lang.Exception) {
+                System.err.println("Exception when calling algod#transactionInformation: " + e.message);
+                    runOnUiThread {
+                        binding.progress.visibility = View.GONE
+                        binding.result.text =
+                            "${e.message}"
+                    }
             }
         }
     }
