@@ -117,7 +117,7 @@ To successfully run this program, you need to generate/create four different acc
   Distributed under the MIT License. See  for more information. [LICENSE](https://github.com/gconnect/AlgorandPayrollContract/blob/master/LICENSE)
   
 # Blog and Video Tutorial
-For more details you can checkout the blog post [here](https://developer.algorand.org/solutions/building-an-android-payroll-dapp-using-algorand-smart-contract/) .
+For more details you can checkout the blog post [here](https://developer.algorand.org/solutions/building-an-android-payroll-dapp-using-algorand-smart-contract/) . And here is the link to the [youtube demo](https://www.youtube.com/watch?v=ps8Tvmq6zl8&t=2s)
 
 
 # Disclaimer
