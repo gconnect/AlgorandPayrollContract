@@ -53,10 +53,10 @@ To successfully run this program, you need to generate/create four different acc
 
 ## Teal Program/Smart Contract
 ```teal
- val tealSource = """#pragma version 4        
-                // Check the Fee is resonable, In this case 10,000 microalgos
+ val tealSource = """#pragma version 5        
+                // Check the Fee is resonable, In this case 1,000 microalgos
                 txn Fee
-                int 10000
+                int 1000
                 <=
 
                 //Check that the first group transaction is equal to 2000000
@@ -115,7 +115,7 @@ To successfully run this program, you need to generate/create four different acc
   Distributed under the MIT License. See  for more information. [LICENSE](https://github.com/gconnect/AlgorandPayrollContract/blob/master/LICENSE)
   
 # Blog and Video Tutorial
-For more details you can checkout the blog post [here](https://developer.algorand.org/solutions/building-an-android-payroll-dapp-using-algorand-smart-contract/) . And here is the link to the [youtube demo](https://www.youtube.com/watch?v=ps8Tvmq6zl8&t=2s)
+For more details you can checkout the blog post [here](https://developer.algorand.org/solutions/building-an-android-payroll-dapp-using-algorand-smart-contract/) . And here is the link to the [youtube demo](https://youtu.be/5z1XRSIBSmU)
 
 
 # Disclaimer
