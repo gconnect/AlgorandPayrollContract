@@ -353,12 +353,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                         " Response:\n Hash: ${response.body().hash}\n Result:  ${response.body().result}"
                 }
                             
-            } catch (e: Throwable) {
-                e.printStackTrace()
+            } catch (e: java.lang.Exception) {
+                e.message
                 runOnUiThread {
                     binding.progress.visibility = View.GONE
                     binding.result.text =
-                        "Error occured, check the TEAL program"
+                        "Error occured, check the TEAL program\n ${e.message}}"
                 }
             }
 
