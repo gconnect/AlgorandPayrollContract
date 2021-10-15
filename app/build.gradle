@@ -49,7 +49,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
     //Algorand-sdk
-    implementation 'com.algorand:algosdk:1.7.0'
+    implementation 'com.algorand:algosdk:1.10.0'
 
     //logging
     implementation "com.jakewharton.timber:timber:4.7.1"
