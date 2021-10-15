@@ -28,6 +28,8 @@ object Constants {
     // Teal Generated Algorand Address
     const val LSIG_SENDER_ADDRESS = "KNJEENOA2Z5MYBQCJR43KWOGR2LNBPU3DJNMBEZFBX4TJ3CKR674F7EQ5E"
 
+
+
     // Teal program
     val tealSource = """#pragma version 5        
                 // Check the Fee is reasonable, In this case 1,000 micro algos
