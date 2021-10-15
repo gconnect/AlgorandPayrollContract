@@ -52,41 +52,54 @@ To successfully run this program, you need to generate/create four different acc
 - `EmployeeDataSource` handles dummy data/list of empployees
 
 ## Teal Program/Smart Contract
-```
- val tealSource = """
-                int 1
-                
+```teal
+ val tealSource = """#pragma version 4        
                 // Check the Fee is resonable, In this case 10,000 microalgos
                 txn Fee
                 int 10000
                 <=
-                &&
-                
+
                 //Check that the first group transaction is equal to 2000000
                 gtxn 0 Amount
                 int 2000000
-                == 
-                && 
-
+                ==
+                assert
+                
                 //Check that the second group transaction is equal to 1000000
                 gtxn 1 Amount
                 int 1000000
-                == // same here, need to add an evaluation
-                &&
-
+                == 
+                assert
+               
                 //Check that the third group transaction is equal to 2000000
                 gtxn 2 Amount
                 int 2000000
                 ==
-                &&
-                
+                assert
                 
                 //Check that the transaction amount is less than 5000000 or equal to 5000000
                 txn Amount
                 int 5000000
                 <=
-                &&
-              
+                assert
+                
+                //Check the number of transactions in this atomic transaction group
+                global GroupSize
+                int 3
+                ==
+                assert
+                
+                //CloseRemainderTo should be the intended recipient or equal to global ZeroAddress.
+                txn CloseRemainderTo 
+                global ZeroAddress
+                ==
+                assert
+                
+                //This check to prevent the transaction from been assigned to a new private key.
+                txn RekeyTo
+                global ZeroAddress
+                ==
+                assert     
             """.trimIndent()
   ```
 # How the app works
@@ -102,7 +115,7 @@ To successfully run this program, you need to generate/create four different acc
   Distributed under the MIT License. See  for more information. [LICENSE](https://github.com/gconnect/AlgorandPayrollContract/blob/master/LICENSE)
   
 # Blog and Video Tutorial
-For more details you can checkout the blog post [here](https://developer.algorand.org/solutions/building-an-android-payroll-dapp-using-algorand-smart-contract/) .
+For more details you can checkout the blog post [here](https://developer.algorand.org/solutions/building-an-android-payroll-dapp-using-algorand-smart-contract/) . And here is the link to the [youtube demo](https://www.youtube.com/watch?v=ps8Tvmq6zl8&t=2s)
 
 
 # Disclaimer
